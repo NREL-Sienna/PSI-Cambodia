@@ -1,0 +1,95 @@
+branch:
+- {custom_name: object, name: name}
+- {custom_name: source, name: connection_points_from}
+- {custom_name: sink, name: connection_points_to}
+- {custom_name: r, name: r}
+- {custom_name: x, name: x}
+- {custom_name: linesus, name: primary_shunt}
+- {custom_name: linemva, name: rate, system_per_unit: false}
+- {custom_name: Min Angle Limits, name: min_angle_limits}
+- {custom_name: Max Angle Limits, name: max_angle_limits}
+- {custom_name: Tap, name: tap}
+- {custom_name: category, name: branch_category}
+bus:
+- {custom_name: id, name: bus_id}
+- {custom_name: node, name: name}
+- {custom_name: zone, name: zone}
+- {custom_name: area, name: area}
+- {custom_name: voltage, name: base_voltage}
+- {custom_name: type, name: bus_type}
+- {custom_name: angle, name: angle}
+- {custom_name: voltage, name: voltage}
+- {custom_name: Reference Load, name: max_active_power, system_per_unit: false}
+- {custom_name: MVAR Load, name: max_reactive_power, system_per_unit: false}
+
+dc_branch:
+- {custom_name: UID, name: name}
+- {custom_name: From Bus, name: connection_points_from}
+- {custom_name: To Bus, name: connection_points_to}
+- {custom_name: MW Load, name: mw_load}
+- {custom_name: From Max Firing Angle, name: rectifier_firing_angle_max}
+- {custom_name: From Min Firing Angle, name: rectifier_firing_angle_min}
+- {custom_name: From X Commutating, name: rectifier_xrc}
+- {custom_name: From Tap Max, name: rectifier_tap_limits_max}
+- {custom_name: From Tap Min, name: rectifier_tap_limits_min}
+- {custom_name: To Max Firing Angle, name: inverter_firing_angle_max}
+- {custom_name: To Min Firing Angle, name: inverter_firing_angle_min}
+- {custom_name: To X Commutating, name: inverter_xrc}
+- {custom_name: To Tap Max, name: inverter_tap_limits_max}
+- {custom_name: To Tap Min, name: inverter_tap_limits_min}
+- {custom_name: Margin, name: loss}
+- {custom_name: From Active Power Min, name: min_active_power_limit_from}
+- {custom_name: From Active Power Max, name: max_active_power_limit_from}
+- {custom_name: To Active Power Min, name: min_active_power_limit_to}
+- {custom_name: To Active Power Max, name: max_active_power_limit_to}
+- {custom_name: Control Mode, name: control_mode}
+- {custom_name: DC Line Category, name: dc_line_category}
+generator:
+- {custom_name: name, name: name}
+- {custom_name: node, name: bus_id}
+- {custom_name: fuel, name: fuel}
+- {custom_name: fuel_price, name: fuel_price}
+- {custom_name: maxcap, name: active_power_limits_max, system_per_unit: false}
+- {custom_name: mincap, name: active_power_limits_min, system_per_unit: false}
+- {custom_name: mindn, name: min_down_time}
+- {custom_name: minup, name: min_up_time}
+- {custom_name: ramp, name: ramp_limits}
+- {custom_name: heat_rate, name: heat_rate_avg_0}
+- {custom_name: deratef, name: output_percent_0}
+- {custom_name: var_om, name: variable_cost}
+- {custom_name: st_cost, name: startup_cost}
+- {custom_name: typ, name: category}
+- {custom_name: typ, name: generator_category}
+- {custom_name: maxcap, name: active_power, system_per_unit: false}
+- {custom_name: prime_mover, name: unit_type}
+- {custom_name: maxcap, name: base_mva, system_per_unit: false}
+load:
+- {custom_name: object, name: name}
+- {custom_name: bus, name: bus_id}
+- {custom_name: Load, name: max_active_power, system_per_unit: false}
+- {custom_name: MVAR Load, name: max_reactive_power, system_per_unit: false}
+reserves:
+- {custom_name: object, name: name}
+- {custom_name: Generator, name: contributing_devices}
+- {custom_name: device_categories, name: eligible_device_categories}
+- {custom_name: Min Provision, name: requirement}
+- {custom_name: Timeframe, name: timeframe}
+- {custom_name: Region, name: eligible_regions}
+- {custom_name: Type, name: reserve_category}
+- {custom_name: Direction, name: direction}
+simulation_objects: []
+storage:
+- {custom_name: GEN UID, name: name}
+- {custom_name: Storage, name: name}
+- {custom_name: BUS ID, name: bus_id}
+- {custom_name: Energy Level, name: energy_level}
+- {custom_name: MW Inj, name: active_power, system_per_unit: false}
+- {custom_name: MVAR Inj, name: reactive_power, system_per_unit: false}
+- {custom_name: Input Power Limits Max, name: input_power_limits_max, system_per_unit: false}
+- {custom_name: Input Power Limits Min, name: input_power_limits_min, system_per_unit: false}
+- {custom_name: Output Power Limits Max, name: output_active_power_limits_max, system_per_unit: false}
+- {custom_name: Output Power Limits Min, name: output_active_power_limits_min, system_per_unit: false}
+- {custom_name: QMax MVAR, name: reactive_power_limits_max, system_per_unit: false}
+- {custom_name: QMin MVAR, name: reactive_power_limits_min, system_per_unit: false}
+- {custom_name: Cont Rating, name: rating, system_per_unit: false}
+- {custom_name: efficiency, name: efficiency}
