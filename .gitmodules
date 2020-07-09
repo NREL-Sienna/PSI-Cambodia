@@ -1,0 +1,3 @@
+[submodule "PowNet"]
+	path = PowNet
+	url = git@github.com:kamal0013/PowNet.git
