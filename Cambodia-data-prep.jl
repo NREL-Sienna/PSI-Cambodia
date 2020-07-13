@@ -134,3 +134,11 @@ rawsys = PowerSystems.PowerSystemTableData(
 
 # create a system
 sys = System(rawsys, forecast_resolution = Dates.Hour(1))
+
+# serialize the system
+to_json(sys, "sys-cambodia.json", force = true)
+
+# plot demand
+plot_demand(sys)
+
+plot_demand(sys, aggregate=System)

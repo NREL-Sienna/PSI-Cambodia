@@ -1,2 +1,4 @@
 *.txt
 *.log
+*.ipynb
+siip_data
