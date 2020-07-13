@@ -33,9 +33,9 @@ generator:
 - {custom_name: prime_mover, name: unit_type}
 - {custom_name: maxcap, name: base_mva, unit_system: natural_units}
 load:
-- {custom_name: node, name: name}
-- {custom_name: node, name: bus_id}
-- {custom_name: load_maximum, name: max_active_power, unit_system: natural_units}
+- {custom_name: component_name, name: name}
+- {custom_name: component_name, name: bus_id}
+- {custom_name: scaling_factor, name: max_active_power, unit_system: natural_units}
 reserves: []
 simulation_objects: []
 storage:
