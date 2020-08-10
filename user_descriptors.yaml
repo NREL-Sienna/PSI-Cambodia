@@ -4,8 +4,8 @@ branch:
 - {custom_name: sink, name: connection_points_to}
 - {custom_name: r, name: r, unit_system: device_base}
 - {custom_name: x, name: x, unit_system: device_base}
-- {custom_name: linesus, name: primary_shunt, unit_system: device_base}
-- {custom_name: linemva, name: rate, unit_system: system_base}
+- {custom_name: b, name: primary_shunt, unit_system: device_base}
+- {custom_name: linemva, name: rate, unit_system: natural_units}
 bus:
 - {custom_name: id, name: bus_id}
 - {custom_name: node, name: name}

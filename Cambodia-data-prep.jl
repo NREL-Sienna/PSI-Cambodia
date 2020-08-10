@@ -1,4 +1,3 @@
-#
 
 using PowerSystems
 using PowerGraphics
@@ -8,40 +7,39 @@ using CSV
 using DataFrames
 
 using Logging
-logger = PowerSystems.IS.configure_logging(console_level = Logging.Info, file_level = Logging.Debug)
+logger = PowerSystems.IS.configure_logging(
+    console_level = Logging.Info,
+    file_level = Logging.Debug,
+)
 
 
 pownet_data_dir = joinpath("PowNet", "Model") # data source
 siip_data_dir = mkpath("siip_data") # formatted data target
 
 # read PowNet data files
-branch = CSV.read(joinpath(pownet_data_dir, "data_camb_transparam.csv"))
-gens = CSV.read(joinpath(pownet_data_dir, "data_camb_genparams.csv"))
+branch = CSV.read(joinpath(pownet_data_dir, "data_camb_transparam.csv"), DataFrame)
+gens = CSV.read(joinpath(pownet_data_dir, "data_camb_genparams.csv"), DataFrame)
 
 # add missing required branch info
 branch[!, :r] .= 0.0
-branch[!, :x] .= 0.0
+branch[!, :b] .= 0.0
+branch[!, :x] .= 0.01 ./ branch.linesus
+#branch[!,:linemva] .= branch.linemva .* 10.0
 branch[!, :name] = branch.source .* "_" .* branch.sink
-
-# create a bus/node table
-bus = DataFrame(Dict(:node => union(branch.source, branch.sink)))
-bus[!, :type] .= "PV"
-bus[!, :voltage] .= 100.0
-bus[[b in names(loads_ts) for b in bus.node], :type] .= "PQ"
-bus[bus.node.==gens[gens.maxcap.==maximum(gens.maxcap), :node], :type] .= "REF"
-bus[!, :id] = [1:nrow(bus)...]
-
 
 # function to format time series pointers
 function make_tsp(ts_name, pownet_data_dir, siip_data_dir, category, simulation, label)
     ts_path = joinpath(pownet_data_dir, ts_name)
-    ts = CSV.read(ts_path)
+    ts = CSV.read(ts_path, DataFrame)
     rename!(ts, Dict(:Hour => :Period))
-    ts[!,:Year] .= 2017 #2016 is a leap year but 2/29 isn't in these time series ... use 2017
+    ts[!, :Year] .= 2017 #2016 is a leap year but 2/29 isn't in these time series ... use 2017
     CSV.write(joinpath(siip_data_dir, ts_name), ts)
     df = ts[:, [c for c in names(ts) if !(c in ["Year", "Month", "Day", "Period"])]]
     df = combine(
-        groupby(stack(df, variable_name = :component_name, value_name = :value), :component_name),
+        groupby(
+            stack(df, variable_name = :component_name, value_name = :value),
+            :component_name,
+        ),
         :value => maximum => :scaling_factor,
     )
     df[!, :label] .= label
@@ -68,7 +66,7 @@ hydro_ts = make_tsp(
     siip_data_dir,
     "Generator",
     "test",
-    "get_rating",
+    "get_max_active_power",
 )
 
 hydro_ts = vcat(
@@ -79,7 +77,7 @@ hydro_ts = vcat(
         siip_data_dir,
         "Generator",
         "test",
-        "get_rating",
+        "get_max_active_power",
     ),
 )
 
@@ -108,10 +106,24 @@ gens = vcat(gens, hydro)
 gens[!, :fuel] = [t[1] for t in split.(gens.typ, "_")]
 gens[!, :prime_mover] = [t[end] for t in split.(gens.typ, "_")]
 gens[!, :fuel_price] .= 0.0
+gens[!, :heat_rate] .*= 1000
 gens[gens.fuel.=="oil", :fuel_price] .= 10.3
 gens[gens.fuel.=="coal", :fuel_price] .= 2.1
-gens[gens.fuel.=="imp", :prime_mover] .= "HY"
+gens[gens.fuel.=="imp", :prime_mover] .= "OT"
+gens[gens.fuel.=="imp", :fuel] .= "OTHER"
 gens = gens[gens.fuel.!="slack", :]
+gens[gens.name.=="Salabam", :var_om] .= 48.0
+gens[gens.name.=="impnode_viet", :var_om] .= 65.0
+gens[gens.name.=="impnode_thai", :var_om] .= 66.0
+
+
+# create a bus/node table
+bus = DataFrame(Dict(:node => union(branch.source, branch.sink)))
+bus[!, :type] .= "PV"
+bus[!, :voltage] .= 100.0
+bus[[b in names(loads) for b in bus.node], :type] .= "PQ"
+bus[bus.node.==gens[gens.maxcap.==maximum(gens.maxcap), :node], :type] .= "REF"
+bus[!, :id] = [1:nrow(bus)...]
 
 # make a time series pointers table
 tsp = vcat(loads, hydro_ts)
@@ -128,7 +140,6 @@ rawsys = PowerSystems.PowerSystemTableData(
     siip_data_dir,
     100.0,
     "user_descriptors.yaml";
-    #"timeseries_pointers.csv",
     generator_mapping_file = "generator_mapping.yaml",
 )
 
@@ -139,6 +150,7 @@ sys = System(rawsys, forecast_resolution = Dates.Hour(1))
 to_json(sys, "sys-cambodia.json", force = true)
 
 # plot demand
-plot_demand(sys)
+plotlyjs()
+plot_demand(sys, horizon = 72)
 
-plot_demand(sys, aggregate=System)
+plot_demand(sys, aggregate = System, horizon = 72)
