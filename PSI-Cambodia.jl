@@ -1,6 +1,8 @@
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "slide"}}
 # # [PowerSimulations.jl](https://github.com/nrel-siip/powersimulations.jl) Production Cost Modeling Demo
 # **Cambodia Example**: from [PowNet](https://github.com/kamal0013/PowNet)
+#
+# https://github.com/NREL-SIIP/PSI-Cambodia
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "slide"}}
 # ## Introduction
