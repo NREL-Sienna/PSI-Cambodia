@@ -3,7 +3,7 @@
 This repository contains an example of how to execute a power system scheduling simulation
 using [PowerSimulations.j](https://github.com/NREL-SIIP/PowerSimulations.jl) using data
 assembled for the [PowNet](https://github.com/kamal0013/PowNet) application for the power
-grid in Camboida.
+grid in Camboida. [![DOI](https://zenodo.org/badge/278169749.svg)](https://zenodo.org/badge/latestdoi/278169749)
 
 ![](https://github.com/kamal0013/PowNet/blob/master/fig2_Cambodia_grid.jpg)
 
