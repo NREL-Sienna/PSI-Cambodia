@@ -6,14 +6,12 @@ using Dates
 using CSV
 using DataFrames
 
-using Logging
-logger = PowerSystems.IS.configure_logging(
+logger = configure_logging(
     console_level = Logging.Info,
     file_level = Logging.Debug,
 )
 
-
-pownet_data_dir = joinpath("PowNet", "Model") # data source
+pownet_data_dir = joinpath("PowNet", "Model_withdata", "input") # data source
 siip_data_dir = mkpath("siip_data") # formatted data target
 
 # read PowNet data files
@@ -24,7 +22,6 @@ gens = CSV.read(joinpath(pownet_data_dir, "data_camb_genparams.csv"), DataFrame)
 branch[!, :r] .= 0.0
 branch[!, :b] .= 0.0
 branch[!, :x] .= 0.01 ./ branch.linesus
-#branch[!,:linemva] .= branch.linemva .* 10.0
 branch[!, :name] = branch.source .* "_" .* branch.sink
 
 # function to format time series pointers
@@ -40,12 +37,15 @@ function make_tsp(ts_name, pownet_data_dir, siip_data_dir, category, simulation,
             stack(df, variable_name = :component_name, value_name = :value),
             :component_name,
         ),
-        :value => maximum => :scaling_factor,
+        :value => maximum => :normalization_factor,
     )
-    df[!, :label] .= label
+    df[!, :name] .= label
     df[!, :simulation] .= simulation
     df[!, :category] .= category
     df[!, :data_file] .= ts_name
+    df[!, :resolution] .= 3600
+    df[!, :scaling_factor_multiplier] .= "get_max_active_power"
+    df[!, :scaling_factor_multiplier_module] .= "PowerSystems"
     return df
 end
 
@@ -56,59 +56,48 @@ loads = make_tsp(
     siip_data_dir,
     "PowerLoad",
     "test",
-    "get_max_active_power",
+    "max_active_power",
 )
 
 # collect hydro generation info
-hydro_ts = make_tsp(
-    "data_camb_hydro_2016.csv",
-    pownet_data_dir,
-    siip_data_dir,
-    "Generator",
-    "test",
-    "get_max_active_power",
-)
-
 hydro_ts = vcat(
-    hydro_ts,
+    make_tsp(
+        "data_camb_hydro_2016.csv",
+        pownet_data_dir,
+        siip_data_dir,
+        "Generator",
+        "test",
+        "max_active_power",
+    ),
     make_tsp(
         "data_camb_hydro_import_2016.csv",
         pownet_data_dir,
         siip_data_dir,
         "Generator",
         "test",
-        "get_max_active_power",
+        "max_active_power",
     ),
 )
 
 # create complete hydro info from hydro_ts
-hydro = rename(hydro_ts[:, [:component_name, :scaling_factor]], [:name, :maxcap])
-[
-    hydro[!, col] .= val
-    for
-    (col, val) in [
-        :typ => "hydro_HY",
-        :mincap => 0.0,
-        :heat_rate => 0.0,
-        :var_om => 0.0,
-        :fix_om => 0.0,
-        :st_cost => 0.0,
-        :minup => 0,
-        :mindn => 0,
-        :deratef => 1,
-    ]
-];
-hydro[!, :node] = hydro.name
-hydro[!, :ramp] = hydro.maxcap
+function create_hydro!(gen_df, hy)
+    hy_row = Dict{String, Any}(zip(names(gen_df), zeros(ncol(gen_df))))
+    hy_row["name"] = hy.component_name
+    hy_row["node"] = hy.component_name
+    hy_row["maxcap"] = hy.normalization_factor
+    hy_row["ramp"] = hy.normalization_factor
+    hy_row["typ"] = "hydro_HY"
+    append!(gen_df, hy_row, promote = true)
+end
+
+for hy in eachrow(hydro_ts)
+    create_hydro!(gens, hy)
+end
 
 # add missing required generator info
-gens = vcat(gens, hydro)
 gens[!, :fuel] = [t[1] for t in split.(gens.typ, "_")]
 gens[!, :prime_mover] = [t[end] for t in split.(gens.typ, "_")]
-gens[!, :fuel_price] .= 0.0
-gens[!, :heat_rate] .*= 1000
-gens[gens.fuel.=="oil", :fuel_price] .= 10.3
-gens[gens.fuel.=="coal", :fuel_price] .= 2.1
+gens[!, :zero_col] .= 0.0
 gens[gens.fuel.=="imp", :prime_mover] .= "OT"
 gens[gens.fuel.=="imp", :fuel] .= "OTHER"
 gens = gens[gens.fuel.!="slack", :]
@@ -136,7 +125,7 @@ CSV.write(joinpath(siip_data_dir, "load.csv"), loads)
 CSV.write(joinpath(siip_data_dir, "timeseries_pointers.csv"), tsp)
 
 # parse the formatted PowNet data into PowerSystemsTableData
-rawsys = PowerSystems.PowerSystemTableData(
+rawsys = PowerSystemTableData(
     siip_data_dir,
     100.0,
     "user_descriptors.yaml";
@@ -144,13 +133,14 @@ rawsys = PowerSystems.PowerSystemTableData(
 )
 
 # create a system
-sys = System(rawsys, forecast_resolution = Dates.Hour(1))
+sys = System(rawsys, time_series_resolution = Dates.Hour(1))
+transform_single_time_series!(sys, 48, Hour(24))
 
 # serialize the system
 to_json(sys, "sys-cambodia.json", force = true)
 
 # plot demand
 plotlyjs()
-plot_demand(sys, horizon = 72)
+plot_demand(sys);
 
-plot_demand(sys, aggregate = System, horizon = 72)
+plot_demand(sys, aggregation = System);

@@ -17,15 +17,16 @@ generator:
 - {custom_name: name, name: name}
 - {custom_name: node, name: bus_id}
 - {custom_name: fuel, name: fuel}
-- {custom_name: fuel_price, name: fuel_price}
 - {custom_name: maxcap, name: active_power_limits_max, unit_system: natural_units}
 - {custom_name: mincap, name: active_power_limits_min, unit_system: natural_units}
 - {custom_name: mindn, name: min_down_time}
 - {custom_name: minup, name: min_up_time}
 - {custom_name: ramp, name: ramp_limits}
-- {custom_name: heat_rate, name: heat_rate_avg_0}
-- {custom_name: deratef, name: output_point_0}
+- {custom_name: zero_col, name: fuel_price}
+- {custom_name: zero_col, name: cost_point_0}
+- {custom_name: zero_col, name: output_point_0}
 - {custom_name: var_om, name: variable_cost}
+- {custom_name: fix_om, name: fixed_cost}
 - {custom_name: st_cost, name: startup_cost}
 - {custom_name: typ, name: category}
 - {custom_name: typ, name: generator_category}
@@ -35,7 +36,7 @@ generator:
 load:
 - {custom_name: component_name, name: name}
 - {custom_name: component_name, name: bus_id}
-- {custom_name: scaling_factor, name: max_active_power, unit_system: natural_units}
+- {custom_name: normalization_factor, name: max_active_power, unit_system: natural_units}
 reserves: []
 simulation_objects: []
 storage:

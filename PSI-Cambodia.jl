@@ -16,13 +16,14 @@
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
 using PowerSystems
 using PowerSimulations
+using PowerAnalytics
 using PowerGraphics
 using Logging
 using Dates
 using CSV
 using DataFrames
-using GLPK
-solver  = optimizer_with_attributes(GLPK.Optimizer)
+using HiGHS
+solver  = optimizer_with_attributes(HiGHS.Optimizer)
 
 #-
 #nb %% A slide [code] {"slideshow": {"slide_type": "skip"}}
@@ -33,14 +34,12 @@ logger = configure_logging(console_level = Logging.Info,
 
 sim_folder = mkpath(joinpath(pwd(), "Cambodia-sim"))
 ann_sim_folder = joinpath(sim_folder, "Cambodia-year")
-ann_sim_run_folder =
-    joinpath(ann_sim_folder, "$(maximum(parse.(Int64,readdir(ann_sim_folder))))")
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
 # ### Load the `System` from the serialized data.
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
-sys =  System("sys-cambodia.json")
+sys = System("sys-cambodia.json")
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "slide"}}
 # ## PCM in 5-minutes
@@ -51,15 +50,19 @@ sys =  System("sys-cambodia.json")
 # with a DCOPF network representation.
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
-template = template_unit_commitment(network = StandardPTDFModel)
-UC_stage = "UC" => Stage(
-        GenericOpProblem,
-        template,
-        sys,
-        solver;
-        PTDF = PTDF(sys),
-    )
-template
+template = template_unit_commitment(network = DCPPowerModel)
+
+#nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
+# ### Create a `model`
+# Now we can apply the `template` to the data (`sys`) to create a `model`.
+# *note that you can define multiple models here to create multi-stage simulations*
+
+#nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
+models = SimulationModels(
+    decision_models=[
+        DecisionModel(template, sys, optimizer=solver, name="UC"),
+    ],
+)
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
 # ### Sequential Simulation
@@ -68,11 +71,8 @@ template
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
 DA_sequence = SimulationSequence(
-    step_resolution = Hour(24),
-    order = Dict(1 => "UC"),
-    horizons =  Dict("UC" => 48),
-    intervals =  Dict("UC" => (Hour(24), Consecutive())),
-    ini_cond_chronology = IntraStageChronology(),
+    models=models,
+    ini_cond_chronology=InterProblemChronology(),
 )
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
@@ -82,9 +82,9 @@ DA_sequence = SimulationSequence(
 sim = Simulation(
     name = "Cambodia-test",
     steps = 3,
-    stages = Dict(UC_stage),
-    stages_sequence = DA_sequence,
-    simulation_folder = sim_folder,
+    models=models,
+    sequence=DA_sequence,
+    simulation_folder=mktempdir(cleanup=true),
 )
 
 build!(sim, console_level = Logging.Info, file_level = Logging.Debug,  recorders = [:simulation])
@@ -93,20 +93,22 @@ build!(sim, console_level = Logging.Info, file_level = Logging.Debug,  recorders
 # ### Execute the simulation
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
-sim_results = execute!(sim)
+execute!(sim)
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "slide"}}
-# ## Analysis of Annual Simulation Results
-# * requires execution of `include("PSI-Cambodia-Year.jl)` *
+# ## Analysis of Simulation Results
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
-# ### Load annual simulation results
+# ### Load simulation results
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
-#nb annual_results = load_simulation_results(ann_sim_run_folder, "UC")
+results = SimulationResults(sim)
+
+#nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
+uc_results = get_decision_problem_results(results, "UC")
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
-# ### Plot annual simulation results using [PowerGraphics.jl](https://github.com/nrel-siip/PowerGrahpics.jl)
+# ### Plot simulation results using [PowerGraphics.jl](https://github.com/nrel-siip/PowerGrahpics.jl)
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
-#nb fuel_plot(annual_results, sys, load = true, generator_mapping_file = "fuel_mapping.yaml")
+plot_fuel(uc_results, generator_mapping_file = "fuel_mapping.yaml");
