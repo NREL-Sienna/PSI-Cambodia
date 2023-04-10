@@ -13,6 +13,8 @@ logger = configure_logging(
 
 pownet_data_dir = joinpath("PowNet", "Model_withdata", "input") # data source
 siip_data_dir = mkpath("siip_data") # formatted data target
+re_config_dir = "REDE_resource_data" # configuration location for renewable plants
+re_data_dir = joinpath("REDE_resource_data", "Output") # time series data source for renewable plants
 
 # read PowNet data files
 branch = CSV.read(joinpath(pownet_data_dir, "data_camb_transparam.csv"), DataFrame)
@@ -24,14 +26,8 @@ branch[!, :b] .= 0.0
 branch[!, :x] .= 0.01 ./ branch.linesus
 branch[!, :name] = branch.source .* "_" .* branch.sink
 
-# function to format time series pointers
-function make_tsp(ts_name, pownet_data_dir, siip_data_dir, category, simulation, label)
-    ts_path = joinpath(pownet_data_dir, ts_name)
-    ts = CSV.read(ts_path, DataFrame)
-    rename!(ts, Dict(:Hour => :Period))
-    ts[!, :Year] .= 2017 #2016 is a leap year but 2/29 isn't in these time series ... use 2017
-    CSV.write(joinpath(siip_data_dir, ts_name), ts)
-    df = ts[:, [c for c in names(ts) if !(c in ["Year", "Month", "Day", "Period"])]]
+# Internal helper function
+function make_tsp(df, label, simulation, category, ts_name)
     df = combine(
         groupby(
             stack(df, variable_name = :component_name, value_name = :value),
@@ -49,8 +45,29 @@ function make_tsp(ts_name, pownet_data_dir, siip_data_dir, category, simulation,
     return df
 end
 
+# Export time-series in required format and make time-series pointer table
+function make_ts_and_tsp(ts_name, input_data_dir, siip_data_dir, category, simulation, label)
+    ts_path = joinpath(input_data_dir, ts_name)
+    ts = CSV.read(ts_path, DataFrame)
+
+    if occursin("load", ts_name) | occursin("hydro", ts_name)
+        rename!(ts, Dict(:Hour => :Period))
+        ts[!, :Year] .= 2017 #2016 is a leap year but 2/29 isn't in these time series ... use 2017
+    else # Renewable energy data needs time index columns
+        ts ./= 1000 # kW to MW
+        ts = hcat(CSV.read(joinpath(siip_data_dir, "data_camb_load_2016.csv"), DataFrame,
+                    select = ["Year", "Month", "Day", "Period"]),
+                ts)
+    end
+    CSV.write(joinpath(siip_data_dir, ts_name), ts)
+
+    df = ts[:, [c for c in names(ts) if !(c in ["Year", "Month", "Day", "Period"])]]
+    df = make_tsp(df, label, simulation, category, ts_name)
+    return df
+end
+
 # collect loads info
-loads = make_tsp(
+loads = make_ts_and_tsp(
     "data_camb_load_2016.csv",
     pownet_data_dir,
     siip_data_dir,
@@ -61,7 +78,7 @@ loads = make_tsp(
 
 # collect hydro generation info
 hydro_ts = vcat(
-    make_tsp(
+    make_ts_and_tsp(
         "data_camb_hydro_2016.csv",
         pownet_data_dir,
         siip_data_dir,
@@ -69,7 +86,7 @@ hydro_ts = vcat(
         "test",
         "max_active_power",
     ),
-    make_tsp(
+    make_ts_and_tsp(
         "data_camb_hydro_import_2016.csv",
         pownet_data_dir,
         siip_data_dir,
@@ -79,19 +96,37 @@ hydro_ts = vcat(
     ),
 )
 
-# create complete hydro info from hydro_ts
-function create_hydro!(gen_df, hy)
-    hy_row = Dict{String, Any}(zip(names(gen_df), zeros(ncol(gen_df))))
-    hy_row["name"] = hy.component_name
-    hy_row["node"] = hy.component_name
-    hy_row["maxcap"] = hy.normalization_factor
-    hy_row["ramp"] = hy.normalization_factor
-    hy_row["typ"] = "hydro_HY"
-    append!(gen_df, hy_row, promote = true)
+# collect wind and solar info
+re_tsp = make_ts_and_tsp("data_solar_wind_power_2016.csv",
+    re_data_dir,
+    siip_data_dir,
+    "Generator",
+    "test",
+    "max_active_power",
+)
+
+# helpfer function to add hydro, solar, and wind plants
+function create_gen!(gen_df, gen, node, typ)
+    gen_row = Dict{String, Any}(zip(names(gen_df), zeros(ncol(gen_df))))
+    gen_row["name"] = gen.component_name
+    gen_row["node"] = node
+    gen_row["maxcap"] = gen.normalization_factor
+    gen_row["ramp"] = gen.normalization_factor
+    gen_row["typ"] = typ
+    append!(gen_df, gen_row, promote = true)
 end
 
+# create complete hydro info from hydro_ts
 for hy in eachrow(hydro_ts)
-    create_hydro!(gens, hy)
+    create_gen!(gens, hy, hy.component_name, "hydro_HY")
+end
+
+# create complete wind and solar data
+re_config = CSV.read(
+    joinpath(re_config_dir, "RE_plant_config.csv"), DataFrame)
+for re in eachrow(leftjoin(
+            re_tsp, re_config; on = :component_name=>:name))
+    create_gen!(gens, re, re["node"], re["type"])
 end
 
 # add missing required generator info
@@ -115,7 +150,7 @@ bus[bus.node.==gens[gens.maxcap.==maximum(gens.maxcap), :node], :type] .= "REF"
 bus[!, :id] = [1:nrow(bus)...]
 
 # make a time series pointers table
-tsp = vcat(loads, hydro_ts)
+tsp = vcat(loads, hydro_ts, re_tsp)
 
 # write formatted tables to csv
 CSV.write(joinpath(siip_data_dir, "bus.csv"), bus)
@@ -138,9 +173,3 @@ transform_single_time_series!(sys, 48, Hour(24))
 
 # serialize the system
 to_json(sys, "sys-cambodia.json", force = true)
-
-# plot demand
-plotlyjs()
-plot_demand(sys);
-
-plot_demand(sys, aggregation = System);

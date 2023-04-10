@@ -2,3 +2,4 @@
 *.log
 *.ipynb
 siip_data
+*.DS_Store
