@@ -1,0 +1,13 @@
+name: pysam_env
+channels:
+  - defaults
+dependencies:
+  - python=3.10.8
+  - anaconda
+  - pip=22.2.2
+  - pip:
+    - mpmath==1.2.1
+    - nrel-pysam==4.1.0
+    - pyqt5-sip==12.11.0
+    - python-dotenv==1.0.0
+prefix: /Users/kdoubled/opt/anaconda3/envs/pysam_env
