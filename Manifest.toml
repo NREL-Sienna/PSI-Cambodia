@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "8df9e9ec33b434a0af8807ea6ec629f7067a229e"
+project_hash = "ba487861b609304c59b325096abdb6653726eeaa"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
@@ -385,9 +385,9 @@ version = "2.8.1+1"
 
 [[deps.HiGHS]]
 deps = ["HiGHS_jll", "MathOptInterface", "SnoopPrecompile", "SparseArrays"]
-git-tree-sha1 = "c4e72223d3c5401cc3a7059e23c6717ba5a08482"
+git-tree-sha1 = "08535862ef6d42a01ffcaaf6507cfb8a0fe329a6"
 uuid = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
-version = "1.5.0"
+version = "1.5.1"
 
 [[deps.HiGHS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl"]
@@ -481,9 +481,9 @@ version = "0.5.4"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
-git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
+git-tree-sha1 = "31e996f0a15c7b280ba9f76636b3ff9e2ae58c9a"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-version = "0.21.3"
+version = "0.21.4"
 
 [[deps.JSON3]]
 deps = ["Dates", "Mmap", "Parsers", "SnoopPrecompile", "StructTypes", "UUIDs"]
@@ -787,9 +787,9 @@ version = "0.8.1+0"
 
 [[deps.OpenSSL]]
 deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
-git-tree-sha1 = "6503b77492fd7fcb9379bf73cd31035670e3c509"
+git-tree-sha1 = "e9d68fe4b5f78f215aa2f0e6e6dc9e9911d33048"
 uuid = "4d8831e6-92b7-49fb-bdf8-b643e874388c"
-version = "1.3.3"
+version = "1.3.4"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -933,17 +933,11 @@ git-tree-sha1 = "ff163c3a1a9ef34c58452af7f30133ecc11bf565"
 uuid = "e690365d-45e2-57bb-ac84-44ba829e73c4"
 version = "0.19.2"
 
-[[deps.PowerSystemCaseBuilder]]
-deps = ["CSV", "DataFrames", "DataStructures", "Dates", "Downloads", "HDF5", "InfrastructureSystems", "LazyArtifacts", "PowerSystems", "PrettyTables", "Random", "TimeSeries"]
-git-tree-sha1 = "c4fbe35d5c6f598715d3a0c80e8cb7c04ddad386"
-uuid = "f00506e0-b84f-492a-93c2-c0a9afc4364e"
-version = "1.0.4"
-
 [[deps.PowerSystems]]
 deps = ["CSV", "DataFrames", "DataStructures", "Dates", "DocStringExtensions", "InfrastructureSystems", "InteractiveUtils", "JSON3", "LinearAlgebra", "Logging", "PowerFlowData", "PrettyTables", "TimeSeries", "UUIDs", "Unicode", "YAML"]
-git-tree-sha1 = "b106db83c37f222d528bc1063d630b2f7b947838"
+git-tree-sha1 = "587619b8569966d5c05faf1dc52915591ecc0287"
 uuid = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
-version = "2.0.4"
+version = "2.1.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -1083,9 +1077,9 @@ version = "2.2.0"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "b8d897fe7fa688e93aef573711cb207c08c9e11e"
+git-tree-sha1 = "70e0cc0c0f9ef7ea76b3d7a50ada18c8c52e69a2"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.19"
+version = "1.5.20"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
@@ -1186,9 +1180,9 @@ version = "0.5.22"
 
 [[deps.TranscodingStreams]]
 deps = ["Random", "Test"]
-git-tree-sha1 = "94f38103c984f89cf77c402f2a68dbd870f8165f"
+git-tree-sha1 = "0b829474fed270a4b0ab07117dce9b9a2fa7581a"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
-version = "0.9.11"
+version = "0.9.12"
 
 [[deps.URIs]]
 git-tree-sha1 = "074f993b0ca030848b897beff716d93aca60f06a"

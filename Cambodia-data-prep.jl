@@ -1,32 +1,27 @@
-
 using PowerSystems
 using PowerGraphics
-using Logging
 using Dates
 using CSV
 using DataFrames
 
-logger = configure_logging(
-    console_level = Logging.Info,
-    file_level = Logging.Debug,
-)
-
+# # Read in and clean data
 pownet_data_dir = joinpath("PowNet", "Model_withdata", "input") # data source
 siip_data_dir = mkpath("siip_data") # formatted data target
 re_config_dir = "REDE_resource_data" # configuration location for renewable plants
 re_data_dir = joinpath("REDE_resource_data", "Output") # time series data source for renewable plants
 
-# read PowNet data files
+# Read PowNet data files
 branch = CSV.read(joinpath(pownet_data_dir, "data_camb_transparam.csv"), DataFrame)
 gens = CSV.read(joinpath(pownet_data_dir, "data_camb_genparams.csv"), DataFrame)
 
-# add missing required branch info
+# Add missing required branch info
 branch[!, :r] .= 0.0
 branch[!, :b] .= 0.0
 branch[!, :x] .= 0.01 ./ branch.linesus
 branch[!, :name] = branch.source .* "_" .* branch.sink
 
-# Internal helper function
+# # Collect time-varying component info
+# Internal helper functions
 function make_tsp(df, label, simulation, category, ts_name)
     df = combine(
         groupby(
@@ -66,7 +61,7 @@ function make_ts_and_tsp(ts_name, input_data_dir, siip_data_dir, category, simul
     return df
 end
 
-# collect loads info
+# ### Collect loads info
 loads = make_ts_and_tsp(
     "data_camb_load_2016.csv",
     pownet_data_dir,
@@ -76,7 +71,7 @@ loads = make_ts_and_tsp(
     "max_active_power",
 )
 
-# collect hydro generation info
+# ### Collect hydro generation info
 hydro_ts = vcat(
     make_ts_and_tsp(
         "data_camb_hydro_2016.csv",
@@ -96,7 +91,7 @@ hydro_ts = vcat(
     ),
 )
 
-# collect wind and solar info
+# ### Collect wind and solar info
 re_tsp = make_ts_and_tsp("data_solar_wind_power_2016.csv",
     re_data_dir,
     siip_data_dir,
@@ -105,7 +100,8 @@ re_tsp = make_ts_and_tsp("data_solar_wind_power_2016.csv",
     "max_active_power",
 )
 
-# helpfer function to add hydro, solar, and wind plants
+# # Collect generator metadata
+# Helper function to add hydro, solar, and wind plants
 function create_gen!(gen_df, gen, node, typ)
     gen_row = Dict{String, Any}(zip(names(gen_df), zeros(ncol(gen_df))))
     gen_row["name"] = gen.component_name
@@ -116,12 +112,12 @@ function create_gen!(gen_df, gen, node, typ)
     append!(gen_df, gen_row, promote = true)
 end
 
-# create complete hydro info from hydro_ts
+# Create complete hydro info from hydro_ts
 for hy in eachrow(hydro_ts)
     create_gen!(gens, hy, hy.component_name, "hydro_HY")
 end
 
-# create complete wind and solar data
+# Create complete wind and solar data
 re_config = CSV.read(
     joinpath(re_config_dir, "RE_plant_config.csv"), DataFrame)
 for re in eachrow(leftjoin(
@@ -129,7 +125,7 @@ for re in eachrow(leftjoin(
     create_gen!(gens, re, re["node"], re["type"])
 end
 
-# add missing required generator info
+# # Clean up -- add missing required generator info
 gens[!, :fuel] = [t[1] for t in split.(gens.typ, "_")]
 gens[!, :prime_mover] = [t[end] for t in split.(gens.typ, "_")]
 gens[!, :zero_col] .= 0.0
@@ -140,8 +136,8 @@ gens[gens.name.=="Salabam", :var_om] .= 48.0
 gens[gens.name.=="impnode_viet", :var_om] .= 65.0
 gens[gens.name.=="impnode_thai", :var_om] .= 66.0
 
-
-# create a bus/node table
+# # Export supporting .csv files
+# Create a bus/node table
 bus = DataFrame(Dict(:node => union(branch.source, branch.sink)))
 bus[!, :type] .= "PV"
 bus[!, :voltage] .= 100.0
@@ -149,17 +145,18 @@ bus[[b in names(loads) for b in bus.node], :type] .= "PQ"
 bus[bus.node.==gens[gens.maxcap.==maximum(gens.maxcap), :node], :type] .= "REF"
 bus[!, :id] = [1:nrow(bus)...]
 
-# make a time series pointers table
+# Make a time series pointers table
 tsp = vcat(loads, hydro_ts, re_tsp)
 
-# write formatted tables to csv
+# Write formatted tables to csv
 CSV.write(joinpath(siip_data_dir, "bus.csv"), bus)
 CSV.write(joinpath(siip_data_dir, "branch.csv"), branch)
 CSV.write(joinpath(siip_data_dir, "gen.csv"), gens)
 CSV.write(joinpath(siip_data_dir, "load.csv"), loads)
 CSV.write(joinpath(siip_data_dir, "timeseries_pointers.csv"), tsp)
 
-# parse the formatted PowNet data into PowerSystemsTableData
+# # Create and export the PowerSystem.jl system
+# Parse the formatted PowNet data into PowerSystemsTableData
 rawsys = PowerSystemTableData(
     siip_data_dir,
     100.0,
@@ -167,9 +164,9 @@ rawsys = PowerSystemTableData(
     generator_mapping_file = "generator_mapping.yaml",
 )
 
-# create a system
+# Create a system
 sys = System(rawsys, time_series_resolution = Dates.Hour(1))
 transform_single_time_series!(sys, 48, Hour(24))
 
-# serialize the system
+# Serialize the system
 to_json(sys, "sys-cambodia.json", force = true)
