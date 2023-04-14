@@ -103,8 +103,6 @@ execute!(sim)
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
 results = SimulationResults(sim)
-
-#nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
 uc_results = get_decision_problem_results(results, "UC")
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
