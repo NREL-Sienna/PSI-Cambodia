@@ -24,16 +24,15 @@ using CSV
 using DataFrames
 using HiGHS
 solver  = optimizer_with_attributes(HiGHS.Optimizer)
+plotlyjs()
 
 #-
 #nb %% A slide [code] {"slideshow": {"slide_type": "skip"}}
-plotlyjs()
 logger = configure_logging(console_level = Logging.Info,
     file_level = Logging.Debug,
     filename = "log.txt")
 
 sim_folder = mkpath(joinpath(pwd(), "Cambodia-sim"))
-ann_sim_folder = joinpath(sim_folder, "Cambodia-year")
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
 # ### Load the `System` from the serialized data.
@@ -107,6 +106,32 @@ uc_results = get_decision_problem_results(results, "UC")
 
 #nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
 # ### Plot simulation results using [PowerGraphics.jl](https://github.com/nrel-siip/PowerGrahpics.jl)
+
+#nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
+plot_fuel(uc_results, generator_mapping_file = "fuel_mapping.yaml");
+
+#nb # %% A slide [markdown] {"slideshow": {"slide_type": "slide"}}
+# # Now, let's connect the potential renewable generators
+
+#nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
+# ### Connect renewable generators
+
+#nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
+for g in get_components(RenewableDispatch, sys)
+    set_available!(g, true)
+end
+
+#nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
+# ### Re-build and re-simulate
+
+#nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
+build!(sim, console_level = Logging.Info, file_level = Logging.Debug,  recorders = [:simulation]);
+execute!(sim);
+results = SimulationResults(sim);
+uc_results = get_decision_problem_results(results, "UC");
+
+#nb # %% A slide [markdown] {"slideshow": {"slide_type": "subslide"}}
+# ### Plot dispatch stack with renewables
 
 #nb %% A slide [code] {"slideshow": {"slide_type": "fragment"}}
 plot_fuel(uc_results, generator_mapping_file = "fuel_mapping.yaml");

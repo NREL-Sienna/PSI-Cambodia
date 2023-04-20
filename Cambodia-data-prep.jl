@@ -168,5 +168,10 @@ rawsys = PowerSystemTableData(
 sys = System(rawsys, time_series_resolution = Dates.Hour(1))
 transform_single_time_series!(sys, 48, Hour(24))
 
+# Begin with renewable generators disconnected/unavailable
+for g in get_components(RenewableDispatch, sys)
+    set_available!(g, true)
+end
+
 # Serialize the system
 to_json(sys, "sys-cambodia.json", force = true)
