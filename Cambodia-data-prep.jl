@@ -6,7 +6,7 @@ using DataFrames
 
 # # Read in and clean data
 pownet_data_dir = joinpath("PowNet", "Model_withdata", "input") # data source
-siip_data_dir = mkpath("siip_data") # formatted data target
+sienna_data_dir = mkpath("sienna_data") # formatted data target
 re_config_dir = "REDE_resource_data" # configuration location for renewable plants
 re_data_dir = joinpath("REDE_resource_data", "Output") # time series data source for renewable plants
 
@@ -41,7 +41,7 @@ function make_tsp(df, label, simulation, category, ts_name)
 end
 
 # Export time-series in required format and make time-series pointer table
-function make_ts_and_tsp(ts_name, input_data_dir, siip_data_dir, category, simulation, label)
+function make_ts_and_tsp(ts_name, input_data_dir, sienna_data_dir, category, simulation, label)
     ts_path = joinpath(input_data_dir, ts_name)
     ts = CSV.read(ts_path, DataFrame)
 
@@ -50,11 +50,11 @@ function make_ts_and_tsp(ts_name, input_data_dir, siip_data_dir, category, simul
         ts[!, :Year] .= 2017 #2016 is a leap year but 2/29 isn't in these time series ... use 2017
     else # Renewable energy data needs time index columns
         ts ./= 1000 # kW to MW
-        ts = hcat(CSV.read(joinpath(siip_data_dir, "data_camb_load_2016.csv"), DataFrame,
+        ts = hcat(CSV.read(joinpath(sienna_data_dir, "data_camb_load_2016.csv"), DataFrame,
                     select = ["Year", "Month", "Day", "Period"]),
                 ts)
     end
-    CSV.write(joinpath(siip_data_dir, ts_name), ts)
+    CSV.write(joinpath(sienna_data_dir, ts_name), ts)
 
     df = ts[:, [c for c in names(ts) if !(c in ["Year", "Month", "Day", "Period"])]]
     df = make_tsp(df, label, simulation, category, ts_name)
@@ -65,7 +65,7 @@ end
 loads = make_ts_and_tsp(
     "data_camb_load_2016.csv",
     pownet_data_dir,
-    siip_data_dir,
+    sienna_data_dir,
     "PowerLoad",
     "test",
     "max_active_power",
@@ -76,7 +76,7 @@ hydro_ts = vcat(
     make_ts_and_tsp(
         "data_camb_hydro_2016.csv",
         pownet_data_dir,
-        siip_data_dir,
+        sienna_data_dir,
         "Generator",
         "test",
         "max_active_power",
@@ -84,7 +84,7 @@ hydro_ts = vcat(
     make_ts_and_tsp(
         "data_camb_hydro_import_2016.csv",
         pownet_data_dir,
-        siip_data_dir,
+        sienna_data_dir,
         "Generator",
         "test",
         "max_active_power",
@@ -94,7 +94,7 @@ hydro_ts = vcat(
 # ### Collect wind and solar info
 re_tsp = make_ts_and_tsp("data_solar_wind_power_2016.csv",
     re_data_dir,
-    siip_data_dir,
+    sienna_data_dir,
     "Generator",
     "test",
     "max_active_power",
@@ -149,16 +149,16 @@ bus[!, :id] = [1:nrow(bus)...]
 tsp = vcat(loads, hydro_ts, re_tsp)
 
 # Write formatted tables to csv
-CSV.write(joinpath(siip_data_dir, "bus.csv"), bus)
-CSV.write(joinpath(siip_data_dir, "branch.csv"), branch)
-CSV.write(joinpath(siip_data_dir, "gen.csv"), gens)
-CSV.write(joinpath(siip_data_dir, "load.csv"), loads)
-CSV.write(joinpath(siip_data_dir, "timeseries_pointers.csv"), tsp)
+CSV.write(joinpath(sienna_data_dir, "bus.csv"), bus)
+CSV.write(joinpath(sienna_data_dir, "branch.csv"), branch)
+CSV.write(joinpath(sienna_data_dir, "gen.csv"), gens)
+CSV.write(joinpath(sienna_data_dir, "load.csv"), loads)
+CSV.write(joinpath(sienna_data_dir, "timeseries_pointers.csv"), tsp)
 
 # # Create and export the PowerSystem.jl system
 # Parse the formatted PowNet data into PowerSystemsTableData
 rawsys = PowerSystemTableData(
-    siip_data_dir,
+    sienna_data_dir,
     100.0,
     "user_descriptors.yaml";
     generator_mapping_file = "generator_mapping.yaml",
