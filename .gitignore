@@ -1,5 +1,5 @@
 *.txt
 *.log
-*.ipynb
+*.ipynb*
 sienna_data
 *.DS_Store
