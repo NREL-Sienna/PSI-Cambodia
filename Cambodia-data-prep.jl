@@ -170,7 +170,7 @@ transform_single_time_series!(sys, 48, Hour(24))
 
 # Begin with renewable generators disconnected/unavailable
 for g in get_components(RenewableDispatch, sys)
-    set_available!(g, true)
+    set_available!(g, false)
 end
 
 # Serialize the system
