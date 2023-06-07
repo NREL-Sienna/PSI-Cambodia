@@ -54,6 +54,6 @@ for index, row in config.iterrows():
        raise Exception("Plant type must be 'solar' or 'wind'")     
 
 
-# Export to .csv for use by SIIP model
+# Export to .csv for use by Sienna\Ops
 
 power_df.to_csv(os.path.join(os.getcwd(), "Output", "data_solar_wind_power_2016.csv"), index = False)

@@ -2,5 +2,5 @@
 Pursat_PV,solar_PV,PRST,2591403_12.48_103.89_2016.csv,Fixed_12_degree_tilt_pvwattsv8.json
 Phnom_Penh_PV,solar_PV,GS5,2706209_11.76_104.67_2016.csv,Fixed_12_degree_tilt_pvwattsv8.json
 Siem_Reap_PV,solar_PV,SRP,2588443_13.32_103.87_2016.csv,Fixed_12_degree_tilt_pvwattsv8.json
-Kampot_wind,wind_WT,KPT,652188_10.71_104.34_2016.csv,Gamesa_G114_2.0_MW.json
-Viet_wind,wind_WT,Viet,659252_10.59_104.87_2016.csv,Gamesa_G114_2.0_MW.json
+Kampot_wind,wind_WT,KPT,651379_10.72_104.34_2016.csv,Gamesa_G114_2.0_MW.json
+Viet_wind,wind_WT,Viet,658440_10.59_104.86_2016.csv,Gamesa_G114_2.0_MW.json
